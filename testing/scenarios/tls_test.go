@@ -23,7 +23,6 @@ import (
 	"v2ray.com/core/proxy/vmess/outbound"
 	"v2ray.com/core/testing/servers/tcp"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/http"
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
 )
@@ -357,130 +356,6 @@ func TestTLSOverWebSocket(t *testing.T) {
 	var errg errgroup.Group
 	for i := 0; i < 10; i++ {
 		errg.Go(testTCPConn(clientPort, 10240*1024, time.Second*20))
-	}
-	if err := errg.Wait(); err != nil {
-		t.Error(err)
-	}
-}
-
-func TestHTTP2(t *testing.T) {
-	tcpServer := tcp.Server{
-		MsgProcessor: xor,
-	}
-	dest, err := tcpServer.Start()
-	common.Must(err)
-	defer tcpServer.Close()
-
-	userID := protocol.NewID(uuid.New())
-	serverPort := tcp.PickPort()
-	serverConfig := &core.Config{
-		Inbound: []*core.InboundHandlerConfig{
-			{
-				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
-					PortRange: net.SinglePortRange(serverPort),
-					Listen:    net.NewIPOrDomain(net.LocalHostIP),
-					StreamSettings: &internet.StreamConfig{
-						Protocol: internet.TransportProtocol_HTTP,
-						TransportSettings: []*internet.TransportConfig{
-							{
-								Protocol: internet.TransportProtocol_HTTP,
-								Settings: serial.ToTypedMessage(&http.Config{
-									Host: []string{"v2ray.com"},
-									Path: "/testpath",
-								}),
-							},
-						},
-						SecurityType: serial.GetMessageType(&tls.Config{}),
-						SecuritySettings: []*serial.TypedMessage{
-							serial.ToTypedMessage(&tls.Config{
-								Certificate: []*tls.Certificate{tls.ParseCertificate(cert.MustGenerate(nil))},
-							}),
-						},
-					},
-				}),
-				ProxySettings: serial.ToTypedMessage(&inbound.Config{
-					User: []*protocol.User{
-						{
-							Account: serial.ToTypedMessage(&vmess.Account{
-								Id: userID.String(),
-							}),
-						},
-					},
-				}),
-			},
-		},
-		Outbound: []*core.OutboundHandlerConfig{
-			{
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{}),
-			},
-		},
-	}
-
-	clientPort := tcp.PickPort()
-	clientConfig := &core.Config{
-		Inbound: []*core.InboundHandlerConfig{
-			{
-				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
-					PortRange: net.SinglePortRange(clientPort),
-					Listen:    net.NewIPOrDomain(net.LocalHostIP),
-				}),
-				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address: net.NewIPOrDomain(dest.Address),
-					Port:    uint32(dest.Port),
-					NetworkList: &net.NetworkList{
-						Network: []net.Network{net.Network_TCP},
-					},
-				}),
-			},
-		},
-		Outbound: []*core.OutboundHandlerConfig{
-			{
-				ProxySettings: serial.ToTypedMessage(&outbound.Config{
-					Receiver: []*protocol.ServerEndpoint{
-						{
-							Address: net.NewIPOrDomain(net.LocalHostIP),
-							Port:    uint32(serverPort),
-							User: []*protocol.User{
-								{
-									Account: serial.ToTypedMessage(&vmess.Account{
-										Id: userID.String(),
-									}),
-								},
-							},
-						},
-					},
-				}),
-				SenderSettings: serial.ToTypedMessage(&proxyman.SenderConfig{
-					StreamSettings: &internet.StreamConfig{
-						Protocol: internet.TransportProtocol_HTTP,
-						TransportSettings: []*internet.TransportConfig{
-							{
-								Protocol: internet.TransportProtocol_HTTP,
-								Settings: serial.ToTypedMessage(&http.Config{
-									Host: []string{"v2ray.com"},
-									Path: "/testpath",
-								}),
-							},
-						},
-						SecurityType: serial.GetMessageType(&tls.Config{}),
-						SecuritySettings: []*serial.TypedMessage{
-							serial.ToTypedMessage(&tls.Config{
-								AllowInsecure: true,
-							}),
-						},
-					},
-				}),
-			},
-		},
-	}
-
-	servers, err := InitializeServerConfigs(serverConfig, clientConfig)
-	common.Must(err)
-	defer CloseAllServers(servers)
-
-	var errg errgroup.Group
-	for i := 0; i < 10; i++ {
-		errg.Go(testTCPConn(clientPort, 10240*1024, time.Second*40))
 	}
 	if err := errg.Wait(); err != nil {
 		t.Error(err)

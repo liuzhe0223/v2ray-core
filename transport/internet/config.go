@@ -20,8 +20,6 @@ func transportProtocolToString(protocol TransportProtocol) string {
 		return "tcp"
 	case TransportProtocol_UDP:
 		return "udp"
-	case TransportProtocol_HTTP:
-		return "http"
 	case TransportProtocol_WebSocket:
 		return "websocket"
 	default:

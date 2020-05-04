@@ -8,7 +8,6 @@ import (
 	"v2ray.com/core/common/platform/filesystem"
 	"v2ray.com/core/common/serial"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/http"
 	"v2ray.com/core/transport/internet/tcp"
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
@@ -75,21 +74,6 @@ func (c *WebSocketConfig) Build() (proto.Message, error) {
 	config := &websocket.Config{
 		Path:   path,
 		Header: header,
-	}
-	return config, nil
-}
-
-type HTTPConfig struct {
-	Host *StringList `json:"host"`
-	Path string      `json:"path"`
-}
-
-func (c *HTTPConfig) Build() (proto.Message, error) {
-	config := &http.Config{
-		Path: c.Path,
-	}
-	if c.Host != nil {
-		config.Host = []string(*c.Host)
 	}
 	return config, nil
 }
@@ -230,7 +214,6 @@ type StreamConfig struct {
 	TLSSettings    *TLSConfig         `json:"tlsSettings"`
 	TCPSettings    *TCPConfig         `json:"tcpSettings"`
 	WSSettings     *WebSocketConfig   `json:"wsSettings"`
-	HTTPSettings   *HTTPConfig        `json:"httpSettings"`
 	SocketSettings *SocketConfig      `json:"sockopt"`
 }
 
@@ -276,16 +259,6 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		}
 		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
 			ProtocolName: "websocket",
-			Settings:     serial.ToTypedMessage(ts),
-		})
-	}
-	if c.HTTPSettings != nil {
-		ts, err := c.HTTPSettings.Build()
-		if err != nil {
-			return nil, newError("Failed to build HTTP config.").Base(err)
-		}
-		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
-			ProtocolName: "http",
 			Settings:     serial.ToTypedMessage(ts),
 		})
 	}
