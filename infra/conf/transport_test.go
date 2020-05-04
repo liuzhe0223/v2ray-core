@@ -11,9 +11,7 @@ import (
 	"v2ray.com/core/transport"
 	"v2ray.com/core/transport/internet"
 	"v2ray.com/core/transport/internet/headers/http"
-	"v2ray.com/core/transport/internet/headers/noop"
 	"v2ray.com/core/transport/internet/headers/tls"
-	"v2ray.com/core/transport/internet/kcp"
 	"v2ray.com/core/transport/internet/quic"
 	"v2ray.com/core/transport/internet/tcp"
 	"v2ray.com/core/transport/internet/websocket"
@@ -78,12 +76,6 @@ func TestTransportConfig(t *testing.T) {
 						}
 					}
 				},
-				"kcpSettings": {
-					"mtu": 1200,
-					"header": {
-						"type": "none"
-					}
-				},
 				"wsSettings": {
 					"path": "/t"
 				},
@@ -137,13 +129,6 @@ func TestTransportConfig(t *testing.T) {
 									},
 								},
 							}),
-						}),
-					},
-					{
-						ProtocolName: "mkcp",
-						Settings: serial.ToTypedMessage(&kcp.Config{
-							Mtu:          &kcp.MTU{Value: 1200},
-							HeaderConfig: serial.ToTypedMessage(&noop.Config{}),
 						}),
 					},
 					{
