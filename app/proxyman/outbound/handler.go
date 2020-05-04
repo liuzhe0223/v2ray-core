@@ -13,7 +13,6 @@ import (
 	"v2ray.com/core/proxy"
 	"v2ray.com/core/transport"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/pipe"
 )
 
@@ -142,11 +141,6 @@ func (h *Handler) Dial(ctx context.Context, dest net.Destination) (internet.Conn
 
 				go handler.Dispatch(ctx, &transport.Link{Reader: uplinkReader, Writer: downlinkWriter})
 				conn := net.NewConnection(net.ConnectionInputMulti(uplinkWriter), net.ConnectionOutputMulti(downlinkReader))
-
-				if config := tls.ConfigFromStreamSettings(h.streamSettings); config != nil {
-					tlsConfig := config.GetTLSConfig(tls.WithDestination(dest), tls.WithNextProto("h2"))
-					conn = tls.Client(conn, tlsConfig)
-				}
 
 				return conn, nil
 			}

@@ -9,7 +9,6 @@ import (
 	"v2ray.com/core/common/net"
 	"v2ray.com/core/common/session"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/tls"
 )
 
 // Dial dials a new TCP connection to the given destination.
@@ -18,15 +17,6 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
 	conn, err := internet.DialSystem(ctx, dest, streamSettings.SocketSettings)
 	if err != nil {
 		return nil, err
-	}
-
-	if config := tls.ConfigFromStreamSettings(streamSettings); config != nil {
-		tlsConfig := config.GetTLSConfig(tls.WithDestination(dest), tls.WithNextProto("h2"))
-		if config.IsExperiment8357() {
-			conn = tls.UClient(conn, tlsConfig)
-		} else {
-			conn = tls.Client(conn, tlsConfig)
-		}
 	}
 
 	tcpSettings := streamSettings.ProtocolSettings.(*Config)

@@ -11,7 +11,6 @@ import (
 	"v2ray.com/core/common/net"
 	"v2ray.com/core/common/session"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/tls"
 )
 
 // Dial dials a WebSocket connection to the given destination.
@@ -42,11 +41,6 @@ func dialWebsocket(ctx context.Context, dest net.Destination, streamSettings *in
 	}
 
 	protocol := "ws"
-
-	if config := tls.ConfigFromStreamSettings(streamSettings); config != nil {
-		protocol = "wss"
-		dialer.TLSClientConfig = config.GetTLSConfig(tls.WithDestination(dest))
-	}
 
 	host := dest.NetAddr()
 	if (protocol == "ws" && dest.Port == 80) || (protocol == "wss" && dest.Port == 443) {

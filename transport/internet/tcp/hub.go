@@ -4,7 +4,6 @@ package tcp
 
 import (
 	"context"
-	gotls "crypto/tls"
 	"strings"
 	"time"
 
@@ -12,13 +11,11 @@ import (
 	"v2ray.com/core/common/net"
 	"v2ray.com/core/common/session"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/tls"
 )
 
 // Listener is an internet.Listener that listens for TCP connections.
 type Listener struct {
 	listener   net.Listener
-	tlsConfig  *gotls.Config
 	authConfig internet.ConnectionAuthenticator
 	config     *Config
 	addConn    internet.ConnHandler
@@ -40,10 +37,6 @@ func ListenTCP(ctx context.Context, address net.Address, port net.Port, streamSe
 		listener: listener,
 		config:   tcpSettings,
 		addConn:  handler,
-	}
-
-	if config := tls.ConfigFromStreamSettings(streamSettings); config != nil {
-		l.tlsConfig = config.GetTLSConfig(tls.WithNextProto("h2"))
 	}
 
 	if tcpSettings.HeaderSettings != nil {
@@ -76,9 +69,6 @@ func (v *Listener) keepAccepting() {
 			continue
 		}
 
-		if v.tlsConfig != nil {
-			conn = tls.Server(conn, v.tlsConfig)
-		}
 		if v.authConfig != nil {
 			conn = v.authConfig.Server(conn)
 		}

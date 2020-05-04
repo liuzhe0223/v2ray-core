@@ -15,7 +15,6 @@ import (
 	http_proto "v2ray.com/core/common/protocol/http"
 	"v2ray.com/core/common/session"
 	"v2ray.com/core/transport/internet"
-	v2tls "v2ray.com/core/transport/internet/tls"
 )
 
 type requestHandler struct {
@@ -60,12 +59,7 @@ type Listener struct {
 func ListenWS(ctx context.Context, address net.Address, port net.Port, streamSettings *internet.MemoryStreamConfig, addConn internet.ConnHandler) (internet.Listener, error) {
 	wsSettings := streamSettings.ProtocolSettings.(*Config)
 
-	var tlsConfig *tls.Config
-	if config := v2tls.ConfigFromStreamSettings(streamSettings); config != nil {
-		tlsConfig = config.GetTLSConfig()
-	}
-
-	listener, err := listenTCP(ctx, address, port, tlsConfig, streamSettings.SocketSettings)
+	listener, err := listenTCP(ctx, address, port, nil, streamSettings.SocketSettings)
 	if err != nil {
 		return nil, err
 	}
@@ -101,10 +95,6 @@ func listenTCP(ctx context.Context, address net.Address, port net.Port, tlsConfi
 	}, sockopt)
 	if err != nil {
 		return nil, newError("failed to listen TCP on", address, ":", port).Base(err)
-	}
-
-	if tlsConfig != nil {
-		return tls.NewListener(listener, tlsConfig), nil
 	}
 
 	return listener, nil
