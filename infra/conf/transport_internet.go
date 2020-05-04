@@ -6,12 +6,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"v2ray.com/core/common/platform/filesystem"
-	"v2ray.com/core/common/protocol"
 	"v2ray.com/core/common/serial"
 	"v2ray.com/core/transport/internet"
 	"v2ray.com/core/transport/internet/domainsocket"
 	"v2ray.com/core/transport/internet/http"
-	"v2ray.com/core/transport/internet/quic"
 	"v2ray.com/core/transport/internet/tcp"
 	"v2ray.com/core/transport/internet/tls"
 	"v2ray.com/core/transport/internet/websocket"
@@ -94,46 +92,6 @@ func (c *HTTPConfig) Build() (proto.Message, error) {
 	if c.Host != nil {
 		config.Host = []string(*c.Host)
 	}
-	return config, nil
-}
-
-type QUICConfig struct {
-	Header   json.RawMessage `json:"header"`
-	Security string          `json:"security"`
-	Key      string          `json:"key"`
-}
-
-func (c *QUICConfig) Build() (proto.Message, error) {
-	config := &quic.Config{
-		Key: c.Key,
-	}
-
-	if len(c.Header) > 0 {
-		headerConfig, _, err := kcpHeaderLoader.Load(c.Header)
-		if err != nil {
-			return nil, newError("invalid QUIC header config.").Base(err).AtError()
-		}
-		ts, err := headerConfig.(Buildable).Build()
-		if err != nil {
-			return nil, newError("invalid QUIC header config").Base(err).AtError()
-		}
-		config.Header = serial.ToTypedMessage(ts)
-	}
-
-	var st protocol.SecurityType
-	switch strings.ToLower(c.Security) {
-	case "aes-128-gcm":
-		st = protocol.SecurityType_AES128_GCM
-	case "chacha20-poly1305":
-		st = protocol.SecurityType_CHACHA20_POLY1305
-	default:
-		st = protocol.SecurityType_NONE
-	}
-
-	config.Security = &protocol.SecurityConfig{
-		Type: st,
-	}
-
 	return config, nil
 }
 
@@ -244,8 +202,6 @@ func (p TransportProtocol) Build() (string, error) {
 		return "http", nil
 	case "ds", "domainsocket":
 		return "domainsocket", nil
-	case "quic":
-		return "quic", nil
 	default:
 		return "", newError("Config: unknown transport protocol: ", p)
 	}
@@ -291,7 +247,6 @@ type StreamConfig struct {
 	WSSettings     *WebSocketConfig    `json:"wsSettings"`
 	HTTPSettings   *HTTPConfig         `json:"httpSettings"`
 	DSSettings     *DomainSocketConfig `json:"dsSettings"`
-	QUICSettings   *QUICConfig         `json:"quicSettings"`
 	SocketSettings *SocketConfig       `json:"sockopt"`
 }
 
@@ -358,16 +313,6 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
 			ProtocolName: "domainsocket",
 			Settings:     serial.ToTypedMessage(ds),
-		})
-	}
-	if c.QUICSettings != nil {
-		qs, err := c.QUICSettings.Build()
-		if err != nil {
-			return nil, newError("failed to build QUIC config").Base(err)
-		}
-		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
-			ProtocolName: "quic",
-			Settings:     serial.ToTypedMessage(qs),
 		})
 	}
 	if c.SocketSettings != nil {

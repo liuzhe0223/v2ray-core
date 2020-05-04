@@ -37,7 +37,6 @@ import (
 	// Transports
 	_ "v2ray.com/core/transport/internet/domainsocket"
 	_ "v2ray.com/core/transport/internet/http"
-	_ "v2ray.com/core/transport/internet/quic"
 	_ "v2ray.com/core/transport/internet/tcp"
 	_ "v2ray.com/core/transport/internet/tls"
 	_ "v2ray.com/core/transport/internet/udp"
