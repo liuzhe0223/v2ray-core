@@ -8,7 +8,6 @@ import (
 	"v2ray.com/core/common/platform/filesystem"
 	"v2ray.com/core/common/serial"
 	"v2ray.com/core/transport/internet"
-	"v2ray.com/core/transport/internet/domainsocket"
 	"v2ray.com/core/transport/internet/http"
 	"v2ray.com/core/transport/internet/tcp"
 	"v2ray.com/core/transport/internet/tls"
@@ -93,18 +92,6 @@ func (c *HTTPConfig) Build() (proto.Message, error) {
 		config.Host = []string(*c.Host)
 	}
 	return config, nil
-}
-
-type DomainSocketConfig struct {
-	Path     string `json:"path"`
-	Abstract bool   `json:"abstract"`
-}
-
-func (c *DomainSocketConfig) Build() (proto.Message, error) {
-	return &domainsocket.Config{
-		Path:     c.Path,
-		Abstract: c.Abstract,
-	}, nil
 }
 
 type TLSCertConfig struct {
@@ -200,8 +187,6 @@ func (p TransportProtocol) Build() (string, error) {
 		return "websocket", nil
 	case "h2", "http":
 		return "http", nil
-	case "ds", "domainsocket":
-		return "domainsocket", nil
 	default:
 		return "", newError("Config: unknown transport protocol: ", p)
 	}
@@ -240,14 +225,13 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 }
 
 type StreamConfig struct {
-	Network        *TransportProtocol  `json:"network"`
-	Security       string              `json:"security"`
-	TLSSettings    *TLSConfig          `json:"tlsSettings"`
-	TCPSettings    *TCPConfig          `json:"tcpSettings"`
-	WSSettings     *WebSocketConfig    `json:"wsSettings"`
-	HTTPSettings   *HTTPConfig         `json:"httpSettings"`
-	DSSettings     *DomainSocketConfig `json:"dsSettings"`
-	SocketSettings *SocketConfig       `json:"sockopt"`
+	Network        *TransportProtocol `json:"network"`
+	Security       string             `json:"security"`
+	TLSSettings    *TLSConfig         `json:"tlsSettings"`
+	TCPSettings    *TCPConfig         `json:"tcpSettings"`
+	WSSettings     *WebSocketConfig   `json:"wsSettings"`
+	HTTPSettings   *HTTPConfig        `json:"httpSettings"`
+	SocketSettings *SocketConfig      `json:"sockopt"`
 }
 
 // Build implements Buildable.
@@ -303,16 +287,6 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
 			ProtocolName: "http",
 			Settings:     serial.ToTypedMessage(ts),
-		})
-	}
-	if c.DSSettings != nil {
-		ds, err := c.DSSettings.Build()
-		if err != nil {
-			return nil, newError("Failed to build DomainSocket config.").Base(err)
-		}
-		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
-			ProtocolName: "domainsocket",
-			Settings:     serial.ToTypedMessage(ds),
 		})
 	}
 	if c.SocketSettings != nil {
