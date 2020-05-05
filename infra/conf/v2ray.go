@@ -18,7 +18,6 @@ var (
 		"dokodemo-door": func() interface{} { return new(DokodemoConfig) },
 		"http":          func() interface{} { return new(HttpServerConfig) },
 		"vmess":         func() interface{} { return new(VMessInboundConfig) },
-		"mtproto":       func() interface{} { return new(MTProtoServerConfig) },
 	}, "protocol", "settings")
 
 	outboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
@@ -26,7 +25,6 @@ var (
 		"freedom":   func() interface{} { return new(FreedomConfig) },
 		"http":      func() interface{} { return new(HttpClientConfig) },
 		"vmess":     func() interface{} { return new(VMessOutboundConfig) },
-		"mtproto":   func() interface{} { return new(MTProtoClientConfig) },
 		"dns":       func() interface{} { return new(DnsOutboundConfig) },
 	}, "protocol", "settings")
 
