@@ -297,7 +297,6 @@ type Config struct {
 	OutboundDetours []OutboundDetourConfig `json:"outboundDetour"` // Deprecated.
 	Transport       *TransportConfig       `json:"transport"`
 	Policy          *PolicyConfig          `json:"policy"`
-	Api             *ApiConfig             `json:"api"`
 	Stats           *StatsConfig           `json:"stats"`
 	Reverse         *ReverseConfig         `json:"reverse"`
 }
@@ -343,9 +342,6 @@ func (c *Config) Override(o *Config, fn string) {
 	}
 	if o.Policy != nil {
 		c.Policy = o.Policy
-	}
-	if o.Api != nil {
-		c.Api = o.Api
 	}
 	if o.Stats != nil {
 		c.Stats = o.Stats
@@ -422,14 +418,6 @@ func (c *Config) Build() (*core.Config, error) {
 			serial.ToTypedMessage(&proxyman.InboundConfig{}),
 			serial.ToTypedMessage(&proxyman.OutboundConfig{}),
 		},
-	}
-
-	if c.Api != nil {
-		apiConf, err := c.Api.Build()
-		if err != nil {
-			return nil, err
-		}
-		config.App = append(config.App, serial.ToTypedMessage(apiConf))
 	}
 
 	if c.Stats != nil {
