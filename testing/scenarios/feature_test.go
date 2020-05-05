@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	xproxy "golang.org/x/net/proxy"
 	"v2ray.com/core"
 	"v2ray.com/core/app/dispatcher"
 	"v2ray.com/core/app/log"
@@ -26,7 +25,6 @@ import (
 	"v2ray.com/core/proxy/dokodemo"
 	"v2ray.com/core/proxy/freedom"
 	v2http "v2ray.com/core/proxy/http"
-	"v2ray.com/core/proxy/socks"
 	"v2ray.com/core/proxy/vmess"
 	"v2ray.com/core/proxy/vmess/inbound"
 	"v2ray.com/core/proxy/vmess/outbound"
@@ -300,63 +298,6 @@ func TestBlackhole(t *testing.T) {
 
 	if err := testTCPConn(serverPort2, 1024, time.Second*5)(); err == nil {
 		t.Error("nil error")
-	}
-}
-
-func TestForward(t *testing.T) {
-	tcpServer := tcp.Server{
-		MsgProcessor: xor,
-	}
-	dest, err := tcpServer.Start()
-	common.Must(err)
-	defer tcpServer.Close()
-
-	serverPort := tcp.PickPort()
-	serverConfig := &core.Config{
-		Inbound: []*core.InboundHandlerConfig{
-			{
-				ReceiverSettings: serial.ToTypedMessage(&proxyman.ReceiverConfig{
-					PortRange: net.SinglePortRange(serverPort),
-					Listen:    net.NewIPOrDomain(net.LocalHostIP),
-				}),
-				ProxySettings: serial.ToTypedMessage(&socks.ServerConfig{
-					AuthType: socks.AuthType_NO_AUTH,
-					Accounts: map[string]string{
-						"Test Account": "Test Password",
-					},
-					Address:    net.NewIPOrDomain(net.LocalHostIP),
-					UdpEnabled: false,
-				}),
-			},
-		},
-		Outbound: []*core.OutboundHandlerConfig{
-			{
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{
-					DestinationOverride: &freedom.DestinationOverride{
-						Server: &protocol.ServerEndpoint{
-							Address: net.NewIPOrDomain(net.LocalHostIP),
-							Port:    uint32(dest.Port),
-						},
-					},
-				}),
-			},
-		},
-	}
-
-	servers, err := InitializeServerConfigs(serverConfig)
-	common.Must(err)
-	defer CloseAllServers(servers)
-
-	{
-		noAuthDialer, err := xproxy.SOCKS5("tcp", net.TCPDestination(net.LocalHostIP, serverPort).NetAddr(), nil, xproxy.Direct)
-		common.Must(err)
-		conn, err := noAuthDialer.Dial("tcp", "google.com:80")
-		common.Must(err)
-		defer conn.Close()
-
-		if err := testTCPConn2(conn, 1024, time.Second*5)(); err != nil {
-			t.Error(err)
-		}
 	}
 }
 

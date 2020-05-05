@@ -17,7 +17,6 @@ var (
 	inboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
 		"dokodemo-door": func() interface{} { return new(DokodemoConfig) },
 		"http":          func() interface{} { return new(HttpServerConfig) },
-		"socks":         func() interface{} { return new(SocksServerConfig) },
 		"vmess":         func() interface{} { return new(VMessInboundConfig) },
 		"mtproto":       func() interface{} { return new(MTProtoServerConfig) },
 	}, "protocol", "settings")
@@ -27,7 +26,6 @@ var (
 		"freedom":   func() interface{} { return new(FreedomConfig) },
 		"http":      func() interface{} { return new(HttpClientConfig) },
 		"vmess":     func() interface{} { return new(VMessOutboundConfig) },
-		"socks":     func() interface{} { return new(SocksClientConfig) },
 		"mtproto":   func() interface{} { return new(MTProtoClientConfig) },
 		"dns":       func() interface{} { return new(DnsOutboundConfig) },
 	}, "protocol", "settings")
